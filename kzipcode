@@ -1,0 +1,42 @@
+#!/usr/bin/env ruby
+# -*- encoding : utf-8 -*-
+
+require 'net/http'
+require 'rexml/document'
+require 'yaml'
+
+# handle usage
+unless ARGV[0]
+	puts "Usage: kzipcode [ADDRESS]"
+	exit
+end
+
+# Load OpenAPI Key
+config = YAML::load_file("config.yml")
+regKey = config[:regkey]
+
+# Post Request
+query = ARGV[0].encode('EUC-KR')
+uri = URI('http://biz.epost.go.kr/KpostPortal/openapied')
+res = Net::HTTP.post_form(uri,
+	:regkey => regKey, 
+	:target => :post,
+	:query => query)
+
+# Parse Response
+doc = REXML::Document.new(res.body)
+address = []
+zip = []
+doc.elements.each('post/itemlist/item/address') do | elem |
+	address << elem.text
+end
+doc.elements.each('post/itemlist/item/postcd') do | elem |
+	zip << elem.text
+end
+
+# Print
+address.each_with_index do |title, idx|
+	puts "#{zip[idx]} : #{title}"
+end
+
+
